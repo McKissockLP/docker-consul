@@ -43,6 +43,26 @@ fi
 CONSUL_DATA_DIR=/consul/data
 CONSUL_CONFIG_DIR=/consul/config
 
+# If CONSUL_ENCRYPT is set, json configuration will be created to set the
+# encryption key.
+if [ -n "$CONSUL_ENCRYPT" ]; then
+  jo encrypt="$CONSUL_ENCRYPT" > "$CONSUL_CONFIG_DIR/encrypt.json"
+fi
+
+# If CONSUL_DISABLE_EXEC is set, json configuration will be created to disable
+# remote execution.
+if [ -n "$CONSUL_DISABLE_EXEC" ]; then
+  jo disable_remote_exec=true > "$CONSUL_CONFIG_DIR/disable_remote_exec.json"
+fi
+
+# If CONSUL_MASTER_TOKEN and CONSUL_DC is set, json configuration will be
+# created to set the acl_datacenter, acl_master_token, acl_default_policy, and
+# acl_down_policy configuration values. By default, the default and down policy
+# configuration is set to "deny".
+if [ -n "$CONSUL_MASTER_TOKEN" ] && [ -n "$CONSUL_DC" ]; then
+  jo acl_datacenter="$CONSUL_DC" acl_master_token="$CONSUL_MASTER_TOKEN" acl_default_policy="deny" acl_down_policy="deny" > "$CONSUL_CONFIG_DIR/disable_remote_exec.json"
+fi
+
 # You can also set the CONSUL_LOCAL_CONFIG environemnt variable to pass some
 # Consul configuration JSON without having to bind any volumes.
 if [ -n "$CONSUL_LOCAL_CONFIG" ]; then

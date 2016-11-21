@@ -1,5 +1,5 @@
 FROM alpine:3.4
-MAINTAINER James Phillips <james@hashicorp.com> (@slackpad)
+MAINTAINER Nick Gerakines <nick@gerakines.net> (@ngerakines)
 
 # This is the release of Consul to pull in.
 ENV CONSUL_VERSION=0.7.1
@@ -15,26 +15,40 @@ RUN addgroup consul && \
 
 # Set up certificates, our base tools, and Consul.
 RUN apk add --no-cache ca-certificates curl gnupg libcap openssl && \
-    gpg --recv-keys 91A6E7F85D05C65630BEF18951852D87348FFC4C && \
+    gpg --keyserver ha.pool.sks-keyservers.net --recv-keys 91A6E7F85D05C65630BEF18951852D87348FFC4C && \
     mkdir -p /tmp/build && \
     cd /tmp/build && \
     wget https://releases.hashicorp.com/docker-base/${DOCKER_BASE_VERSION}/docker-base_${DOCKER_BASE_VERSION}_linux_amd64.zip && \
     wget https://releases.hashicorp.com/docker-base/${DOCKER_BASE_VERSION}/docker-base_${DOCKER_BASE_VERSION}_SHA256SUMS && \
     wget https://releases.hashicorp.com/docker-base/${DOCKER_BASE_VERSION}/docker-base_${DOCKER_BASE_VERSION}_SHA256SUMS.sig && \
-    gpg --batch --verify docker-base_${DOCKER_BASE_VERSION}_SHA256SUMS.sig docker-base_${DOCKER_BASE_VERSION}_SHA256SUMS && \
+    gpg --keyserver ha.pool.sks-keyservers.net --batch --verify docker-base_${DOCKER_BASE_VERSION}_SHA256SUMS.sig docker-base_${DOCKER_BASE_VERSION}_SHA256SUMS && \
     grep ${DOCKER_BASE_VERSION}_linux_amd64.zip docker-base_${DOCKER_BASE_VERSION}_SHA256SUMS | sha256sum -c && \
     unzip docker-base_${DOCKER_BASE_VERSION}_linux_amd64.zip && \
     cp bin/gosu bin/dumb-init /bin && \
     wget https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip && \
     wget https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_SHA256SUMS && \
     wget https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_SHA256SUMS.sig && \
-    gpg --batch --verify consul_${CONSUL_VERSION}_SHA256SUMS.sig consul_${CONSUL_VERSION}_SHA256SUMS && \
+    gpg --keyserver ha.pool.sks-keyservers.net --batch --verify consul_${CONSUL_VERSION}_SHA256SUMS.sig consul_${CONSUL_VERSION}_SHA256SUMS && \
     grep consul_${CONSUL_VERSION}_linux_amd64.zip consul_${CONSUL_VERSION}_SHA256SUMS | sha256sum -c && \
     unzip -d /bin consul_${CONSUL_VERSION}_linux_amd64.zip && \
     cd /tmp && \
     rm -rf /tmp/build && \
     apk del gnupg openssl && \
     rm -rf /root/.gnupg
+
+# Install jo (https://github.com/jpmens/jo)
+RUN apk add --no-cache autoconf make tar openssl g++ && \
+  cd /tmp && \
+  wget https://github.com/jpmens/jo/releases/download/v1.0/jo-1.0.tar.gz && \
+  tar zxvf jo-1.0.tar.gz && \
+  cd jo-1.0 && \
+  ./configure && \
+  make check && \
+  make install && \
+  cd /tmp && \
+  rm -rfv j-1.0 && \
+  apk del autoconf make tar openssl g++ && \
+  jo hello=world
 
 # The /consul/data dir is used by Consul to store state. The agent will be started
 # with /consul/config as the configuration directory so you can add additional
